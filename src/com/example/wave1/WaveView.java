@@ -1,12 +1,13 @@
 package com.example.wave1;
 
-import java.io.IOException;
-
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.media.MediaPlayer;
 import android.media.audiofx.Visualizer;
+import android.net.Uri;
+import android.util.Log;
 import android.view.View;
 
 public class WaveView extends View{
@@ -36,13 +37,16 @@ public class WaveView extends View{
 //        } catch (Exception e) {
 //            System.out.println("PlotWav.init " + e);
 //        }
-    	MediaPlayer player = new MediaPlayer();
-    	try{
-    	player.setDataSource("/mnt/sdcard/music/[初音ミク]  愛言葉  [オリジナル曲].mp3");
-    	}catch(IOException error){}
-    	Visualizer visualizer = new Visualizer(player.getAudioSessionId());
-    	visualizer.setEnabled(true);
-//    	visualizer.setCaptureSize(Visualizer.getCaptureSizeRange()[1]);
+    	
+//    	try{
+    	MediaPlayer player = MediaPlayer.create(getContext(), Uri.parse("/mnt/sdcard/music/test.mp3"));
+//    	}catch(IOException error){
+//    		Log.d("wave1", error.getMessage());
+//    	}
+    	player.start();
+    	Visualizer visualizer = new Visualizer(player.getAudioSessionId());	// cannot initialize Visualizer engine error -1
+    	visualizer.setEnabled(false);
+    	visualizer.setCaptureSize(Visualizer.getCaptureSizeRange()[1]);
     	visualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
 			
 			@Override
@@ -61,8 +65,9 @@ public class WaveView extends View{
 		},
 		Visualizer.getMaxCaptureRate(),
 		true, false);	// waveform or fft
+    	visualizer.setEnabled(true);
     	
-    	player.start();
+    	waveform = null;
     }
 
 //    void tick(Graphics g, int nX, int nY) {
@@ -103,11 +108,16 @@ public class WaveView extends View{
 //            xLast = nx(x);
 //            yLast = yVal(data[n]);
 //        }
-    	for (int i = 0; i < waveform.length; i++) {
-    		Paint paint = new Paint();
-			g.drawLine(i, waveform[i], i, 0, paint);
-			
-		}
+    	
+		Paint paint = new Paint();
+		paint.setColor(Color.BLACK);
+    	if(waveform != null){
+        	for (int i = 0; i < waveform.length; i++) {
+    			g.drawLine(i, 480 - waveform[i] + 128, i, 480, paint);
+    		}
+        	g.drawText(waveform[0] + "", 0, 120, paint);
+    	}
+		g.drawText("test", 0, 100, paint);
     }
     
     public void update(byte[] waveform){
