@@ -1,5 +1,7 @@
 package com.example.wave1;
 
+import java.util.Date;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -39,7 +41,7 @@ public class WaveView extends View{
 //        }
     	
 //    	try{
-    	MediaPlayer player = MediaPlayer.create(getContext(), Uri.parse("/mnt/sdcard/music/test.mp3"));
+    	MediaPlayer player = MediaPlayer.create(getContext(), Uri.parse("/mnt/sdcard/music/「ぶちぬけ！２００８！」　オリジナル曲　vo.初音ミク.mp3"));
 //    	}catch(IOException error){
 //    		Log.d("wave1", error.getMessage());
 //    	}
@@ -53,14 +55,17 @@ public class WaveView extends View{
 			public void onWaveFormDataCapture(Visualizer visualizer, byte[] waveform,
 					int samplingRate) {
 				// TODO 自動生成されたメソッド・スタブ
-				update(waveform);
+				updateWaveform(waveform);
 			}
 			
 			@Override
 			public void onFftDataCapture(Visualizer visualizer, byte[] fft,
 					int samplingRate) {
 				// TODO 自動生成されたメソッド・スタブ
-				
+				for (int i = 0; i < fft.length; i++) {
+					fft[i] *= 10;
+				}
+				updateWaveform(fft);				
 			}
 		},
 		Visualizer.getMaxCaptureRate(),
@@ -111,16 +116,24 @@ public class WaveView extends View{
     	
 		Paint paint = new Paint();
 		paint.setColor(Color.BLACK);
+		int start_y = 800 - 256;
     	if(waveform != null){
         	for (int i = 0; i < waveform.length; i++) {
-    			g.drawLine(i, 480 - waveform[i] + 128, i, 480, paint);
+    			g.drawLine(i, start_y - waveform[i], i, start_y, paint);
     		}
-        	g.drawText(waveform[0] + "", 0, 120, paint);
+        	g.drawText(waveform.length + "", 0, 120, paint);
     	}
-		g.drawText("test", 0, 100, paint);
+    	paint.setColor(Color.RED);
+    	g.drawLine(0, start_y, 480, start_y, paint);
+    
+    	invalidate();
+        try {
+            Thread.sleep(30);
+        } catch (InterruptedException e) {
+        }
     }
     
-    public void update(byte[] waveform){
+    public void updateWaveform(byte[] waveform){
     	this.waveform = waveform;
     }
     
