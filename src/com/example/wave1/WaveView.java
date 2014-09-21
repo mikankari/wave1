@@ -1,37 +1,29 @@
 package com.example.wave1;
 
-import java.util.Date;
-
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
 import android.media.audiofx.Visualizer;
-import android.net.Uri;
-import android.util.Log;
 import android.view.View;
 
 public class WaveView extends View{
 
+	MediaPlayer player;
+	Visualizer visualizer;
 	byte[] waveform;
 	byte[] fft;
 
-	public WaveView(Context context){
+	public WaveView(Context context, MediaPlayer player){
 		super(context);
 		
+		this.player = player;
 		init();
 	}
 	
     public void init() {
-//    	try{
-    	MediaPlayer player = MediaPlayer.create(getContext(), Uri.parse("/mnt/sdcard/music/you.mp3"));
-//    	}catch(IOException error){
-//    		Log.d("wave1", error.getMessage());
-//    	}
-    	player.start();
-
-    	Visualizer visualizer = new Visualizer(player.getAudioSessionId());
+    	visualizer = new Visualizer(player.getAudioSessionId());
     	visualizer.setEnabled(false);
     	visualizer.setCaptureSize(Visualizer.getCaptureSizeRange()[1]);
     	visualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
@@ -49,9 +41,10 @@ public class WaveView extends View{
 			public void onFftDataCapture(Visualizer visualizer, byte[] fft,
 					int samplingRate) {
 				// fft[0]:			直流成分の値（――、すなわち0Hz）
-				// fft[2 * i]:		交流成分の実数部（sinみたいな～～）
-				// fft[2 * i + 1]:	交流成分の虚数部（cosみたいな～～）
-				// ここでは実数部と虚数部を計算済みの値にしている
+				// fft[1]:			サンプリング周波数の半分の実部
+				// fft[2 * i]:		交流成分の実部（sinみたいな～～）
+				// fft[2 * i + 1]:	交流成分の虚部（cosみたいな～～）
+				// ここでは実部と虚部を計算済みの値にしている
 	    		for (int i = 1; i < fft.length / 2; i++) {
 	    			double amplitude = Math.sqrt(Math.pow(fft[i * 2], 2) + Math.pow(fft[i * 2 + 1], 2));
 	    			if(amplitude > Byte.MAX_VALUE){
@@ -71,66 +64,80 @@ public class WaveView extends View{
     	fft = null;
     }
 
-    // ウェーブレット変換
-    private byte[] invoke(byte[] input_origin){
-    	byte[] input = new byte[input_origin.length];
-    	for (int i = 0; i < input_origin.length; i++) {
-			input[i] = input_origin[i];
+    // ウェーブレット変換    
+    private byte[] invoke(byte[] input){
+    	byte[] output = new byte[input.length];
+    	for (int i = input.length / 2; i >= 1; i -= 2) {
+			for (int j = 0; j < i; j++) {
+				int average = (input[j * 2] + input[j * 2 + 1]) / 2;
+				int difference = input[j * 2] - input[j * 2 + 1];
+				output[j] = (byte)average;
+				output[i + j] = (byte)difference;
+			}
 		}
-        byte[] output = new byte[input.length];
-        
-        for(int length = input.length >> 1; ; length >>= 1){
-            //length=2^n, WITH DECREASING n
-            for(int i = 0; i < length; i++) {
-                int sum = input[i*2]+input[i*2+1];
-                int difference = input[i*2]-input[i*2+1];
-                output[i] = (byte)(sum);
-                output[length+i] = (byte)(difference * 10);
-            }
-            if (length == 1) 
-                return output;
-            
-            //Swap arrays to do next iteration
-//            System.arraycopy(output, 0, input, 0, length<<1);
-        }
+    	return output;
     }
 
     public void onDraw(Canvas g){
 		Paint paint = new Paint();
     	if(waveform != null){
-    		int zero_y = (int)(getHeight() * 0.3);
+    		int zero_y = (int)(getHeight() * 0.25);
     		int wave_width = getWidth();
+	        g.drawText("waveform", 0, zero_y - 50, paint);
 	        for (int i = 0; i < waveform.length - 1; i++) {
 	        	// 線でつなぐ
 //	            int x1 = wave_width * i / waveform.length;
 //	            int y1 = zero_y + waveform[i];
 //	            int x2 = wave_width * (i + 1) / waveform.length;
 //	            int y2 = zero_y + waveform[i + 1];
-	        	// 棒を並べる
+	        	// 縦棒を並べる
 	        	int x1 = wave_width * i / waveform.length;
 	        	int y1 = zero_y;
 	        	int x2 = x1;
 	        	int y2 = zero_y - waveform[i];
 		        g.drawLine(x1, y1, x2, y2, paint);
 	        }
-	        g.drawLine(0, zero_y, getWidth(), zero_y, paint);
+	        g.drawLine(0, zero_y, wave_width, zero_y, paint);
+	        
+	        zero_y = (int)(getHeight() * 0.5);
+	        wave_width = getWidth();
+	        g.drawText("wavelet", 0, zero_y - 50, paint);
+	        byte[] wavelet = invoke(waveform);
+	        for (int i = 0; i < wavelet.length / 2; i++) {
+				byte b = wavelet[i];
+	        	int x1 = wave_width * i / (wavelet.length / 2);
+	        	int y1 = zero_y;
+	        	int x2 = x1;
+	        	int y2 = zero_y - wavelet[i];
+		        g.drawLine(x1, y1, x2, y2, paint);				
+	        }
+	        g.drawLine(0, zero_y, wave_width, zero_y, paint);
     	}
 		if(fft != null){
-			int zero_y = (int)(getHeight() * 0.6);
+			int zero_y = (int)(getHeight() * 0.75);
     		int wave_width = getWidth();
+	        g.drawText("FFT", 0, zero_y - 50, paint);
     		for(int i = 1; i < fft.length / 2; i++){
-	        	int x1 = wave_width * i / (fft.length / 2);
+    			int x1 = wave_width * i / (fft.length / 2);
 	        	int y1 = zero_y;
 	        	int x2 = x1;
 	        	int y2 = zero_y - fft[i];
 		        g.drawLine(x1, y1, x2, y2, paint);
 		        // 1kHzごとに目盛り
-		        int samplingrate = 44100;	// TODO: playerから取得する
-		        int capturerate = 1024;	// TODO: visualizerから取得する
+		        int samplingrate = visualizer.getSamplingRate();
+		        int capturerate = visualizer.getCaptureSize();
 		        if(i * 2 % (samplingrate / capturerate / 2) == 0){
 		        	g.drawLine(x1, zero_y, x2, zero_y + 5, paint);
 		        }
     		}
+	        g.drawLine(0, zero_y, wave_width, zero_y, paint);
+    		// 合計値
+	        g.drawText("FFT sum", 0, zero_y + 50, paint);
+    		int sum = 0;
+    		for (int i = 0; i < fft.length / 2; i++) {
+    			sum += fft[i * 2];
+    		}
+    		g.drawLine(0, zero_y + 50, sum / 2, zero_y + 50, paint);
 		}
     
     	// 連続して描画する
