@@ -19,7 +19,7 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		player = MediaPlayer.create(this, Uri.parse("/mnt/sdcard/music/「ぶちぬけ！２００８！」　オリジナル曲　vo.初音ミク.mp3"));
+		player = MediaPlayer.create(this, Uri.parse("/mnt/sdcard/music/vocaloid.mp3"));	// vocaloid.mp3 or bach.mp3 or you.mp3 or 1khz-0db-30sec.wav
 
 		View view = new WaveView(this, player);
 		FrameLayout layout = (FrameLayout)findViewById(R.id.container);
