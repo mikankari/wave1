@@ -39,7 +39,7 @@ public class WaveView extends View{
 
 				// ウェーブレット解析結果生成
 				if(waveform1000ms_index >= waveform1000ms.length){
-					int repetition = 6;
+					int repetition = 2;
 					byte[] wavelet = invoke(waveform1000ms);
 					for (int i = 1; i < repetition; i++) {
 						wavelet = invoke(wavelet);
@@ -107,8 +107,8 @@ public class WaveView extends View{
     // ウェーブレット変換    
     private byte[] invoke(byte[] input){
     	// Haar Wevelet
-		byte[] output = new byte[input.length / 2];
-		byte[] outputw = new byte[input.length / 2];
+//		byte[] output = new byte[input.length / 2];
+//		byte[] outputw = new byte[input.length / 2];
 //		for (int j = 0; j < input.length / 2 - 1; j++) {
 //			int average = (input[j * 2] + input[j * 2 + 1]) / 2;
 //			output[j] = (byte)average;
@@ -118,48 +118,20 @@ public class WaveView extends View{
 		// Daubechie Wavelet
 		byte[] output = new byte[input.length / 2];
 		byte[] outputw = new byte[input.length / 2];
-//		double[] daubechiep = {0.02667005790055555358661744877,
-//				  0.18817680007769148902089297368,
-//				  0.52720118893172558648174482796,
-//				  0.68845903945360356574187178255,
-//				  0.28117234366057746074872699845,
-//				  -0.24984642432731537941610189792,
-//				  -0.19594627437737704350429925432,
-//				  0.12736934033579326008267723320,
-//				  0.09305736460357235116035228984,
-//				  -0.07139414716639708714533609308,
-//				  -0.02945753682187581285828323760,
-//				  0.03321267405934100173976365318,
-//				  0.00360655356695616965542329142,
-//				  -0.01073317548333057504431811411,
-//				  0.00139535174705290116578931845,
-//				  0.00199240529518505611715874224,
-//				  -0.00068585669495971162656137098,
-//				  -0.00011646685512928545095148097,
-//				  0.00009358867032006959133405013,
-//				  -0.00001326420289452124481243668};
-		double[] daubechiep = {0.707106781, 0.707106781};
-//		double[] daubechieq = {-0.00001326420289452124481243668,
-//				  -0.00009358867032006959133405013,
-//				  -0.00011646685512928545095148097,
-//				  0.00068585669495971162656137098,
-//				  0.00199240529518505611715874224,
-//				  -0.00139535174705290116578931845,
-//				  -0.01073317548333057504431811411,
-//				  -0.00360655356695616965542329142,
-//				  0.03321267405934100173976365318,
-//				  0.02945753682187581285828323760,
-//				  -0.07139414716639708714533609308,
-//				  -0.09305736460357235116035228984,
-//				  0.12736934033579326008267723320,
-//				  0.19594627437737704350429925432,
-//				  -0.24984642432731537941610189792,
-//				  -0.28117234366057746074872699845,
-//				  0.68845903945360356574187178255,
-//				  -0.52720118893172558648174482796,
-//				  0.18817680007769148902089297368,
-//				  -0.02667005790055555358661744877};
-		double[] daubechieq = {0.707106781, -0.707106781};
+		double[] daubechiep = {0.707106781, 0.707106781};	// N=1
+//		double[] daubechiep = {0.230377813, 0.714846570, 0.630880767, -0.027983769,
+//								-0.187034811, 0.030841381, 0.032883011, -0.010597401};	// N=4
+//		double[] daubechiep = {0.026670057, 0.188176800, 0.527201188, 0.688459039, 0.281172343,
+//								-0.249846424, -0.195946274, 0.127369340, 0.093057364, -0.071394147,
+//								-0.029457536, 0.033212674, 0.003606553, -0.010733175, 0.001395351,
+//								0.001992405, -0.000685856, -0.000116466, 0.000093588, -0.000013264};	// N=10
+		double[] daubechieq = {0.707106781, -0.707106781};	// N=1
+//		double[] daubechieq = {0.010597401, -0.032883011, 0.030841381, -0.187034811,
+//								0.027983769, -0.630880767, 0.714846570, -0.230377813};	// N=4
+//		double[] daubechieq = {-0.000013264, -0.000093588, -0.000116466, 0.000685856, 0.001992405,
+//								-0.001395351, -0.010733175, -0.003606553, 0.033212674, 0.029457536,
+//								-0.071394147, -0.093057364, 0.127369340, 0.195946274, -0.249846424,
+//								-0.281172343, 0.688459039, -0.527201188, 0.188176800, -0.026670057};	// N=10
 		for (int i = 0; i < input.length / 2; i++) {
 			output[i] = 0;
 			outputw[i] = 0;
@@ -172,63 +144,28 @@ public class WaveView extends View{
     	return output;
     }
 
-    public void onDraw(Canvas g){
+    public void onDraw(Canvas canvas){
 		Paint paint = new Paint();
 		if(!isupdate){
-			g.drawText("update pausing", 0, 20, paint);
+			canvas.drawText("update pausing", 0, 20, paint);
 		}
-    	if(waveform != null){
-    		int zero_y = (int)(getHeight() * 0.25);
-    		int wave_width = getWidth();
-	        g.drawText("waveform " + visualizer.getCaptureSize(), 0, zero_y - 64, paint);
-	        for (int i = 0; i < waveform.length - 1; i++) {
-	        	// 線でつなぐ
-//	            int x1 = wave_width * i / waveform.length;
-//	            int y1 = zero_y + waveform[i];
-//	            int x2 = wave_width * (i + 1) / waveform.length;
-//	            int y2 = zero_y + waveform[i + 1];
-	        	// 縦棒を並べる
-	        	int x1 = wave_width * i / waveform.length;
-	        	int y1 = zero_y;
-	        	int x2 = x1;
-	        	int y2 = zero_y - waveform[i];
-		        g.drawLine(x1, y1, x2, y2, paint);
-	        }
-	        g.drawLine(0, zero_y, wave_width, zero_y, paint);
-    	}
-    	if(wavelet != null && waveform1000ms != null){
-	        int zero_y = (int)(getHeight() * 0.5);
-	        int wave_width = getWidth();
-	        g.drawText("wavelet " + waveform1000ms_index + " / " + waveform1000ms.length, 0, zero_y - 64, paint);
-	        for (int i = 0; i < wavelet.length; i++) {
-	        	int x1 = wave_width * i / wavelet.length;
-	        	int y1 = zero_y;
-	        	int x2 = x1;
-	        	int y2 = zero_y - wavelet[i];
-		        g.drawLine(x1, y1, x2, y2, paint);				
-	        }
-	        g.drawLine(0, zero_y, wave_width, zero_y, paint);
-	        g.drawText("BPM: " + bpm, 0, zero_y + 64, paint);
-    	}
-		if(fft != null){
-			int zero_y = (int)(getHeight() * 0.75);
-    		int wave_width = getWidth();
-	        g.drawText("FFT " + visualizer.getCaptureSize() / 2, 0, zero_y - 64, paint);
-    		for(int i = 1; i < fft.length / 2; i++){
-    			int x1 = wave_width * i / (fft.length / 2);
-	        	int y1 = zero_y;
-	        	int x2 = x1;
-	        	int y2 = zero_y - fft[i * 2];
-		        g.drawLine(x1, y1, x2, y2, paint);
-		        // 1kHzごとに目盛り
-		        int samplingrate = visualizer.getSamplingRate() / 1000;
-		        int capturerate = visualizer.getCaptureSize();
-		        if(i % (samplingrate / capturerate / 2) == 0){
-		        	g.drawLine(x1, zero_y, x2, zero_y + 5, paint);
-		        }
-    		}
-	        g.drawLine(0, zero_y, wave_width, zero_y, paint);
+		drawArray(canvas, "waveform", waveform, 1, (int)(getHeight() * 0.25));
+		drawArray(canvas, "wavelet", wavelet, 1, (int)(getHeight() * 0.50));
+		if(waveform1000ms_index != -1 && waveform1000ms != null){
+			canvas.drawText(waveform1000ms_index + " / " + waveform1000ms.length, 0, (int)(getHeight() * 0.50) - 54, paint);			
 		}
+		if(bpm != -1){
+			canvas.drawText("BPM: " + bpm, 0, (int)(getHeight() * 0.50) + 54, paint);			
+		}
+		drawArray(canvas, "FFT", fft, 2, (int)(getHeight() * 0.75));
+//		for (int i = 0; i < fft.length; i++) {
+	        // 1kHzごとに目盛り
+//	        int samplingrate = visualizer.getSamplingRate() / 1000;
+//	        int capturerate = visualizer.getCaptureSize();
+//	        if(i % (samplingrate / capturerate / 2) == 0){
+//	        	g.drawLine(x1, zero_y, x2, zero_y + 5, paint);
+//	        }	
+//		}
     
     	// 連続して描画する
 		invalidate();
@@ -236,6 +173,24 @@ public class WaveView extends View{
             Thread.sleep(30);
         } catch (InterruptedException e) {
         }
+    }
+    
+    private void drawArray(Canvas canvas, String label, byte[] array, int division, int zero_y){
+    	Paint paint = new Paint();
+    	String length_label = "";
+        int width = getWidth();
+        if(array != null){
+            for (int i = division != 2 ? 0 : 1; i < array.length / division; i++) {
+            	int x1 = width * i / (array.length / division);
+            	int y1 = zero_y;
+            	int x2 = x1;
+            	int y2 = zero_y - array[i * division];
+    	        canvas.drawLine(x1, y1, x2, y2, paint);				
+            }
+            length_label = "" + array.length / division;
+        }
+        canvas.drawText(label + " " + length_label, 0, zero_y - 64, paint);
+        canvas.drawLine(0, zero_y, width, zero_y, paint);    	        	
     }
     
     public boolean onTouchEvent(MotionEvent event) {
@@ -256,7 +211,7 @@ public class WaveView extends View{
         		}
             	waveform1000ms_index += waveform.length;
         	}else{
-        		waveform1000ms = new byte[visualizer.getSamplingRate() / 1000];
+        		waveform1000ms = new byte[visualizer.getSamplingRate() / 1000 * 4];
         		waveform1000ms_index = 0;
         	}
     	}
